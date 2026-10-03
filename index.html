@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drozo Mind - Therapy - Client Portal</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-color: #060608;
+      --card-bg: #111115;
+      --card-border: #1e1e26;
+      --primary: #9bf00b;
+      --primary-hover: #82cc08;
+      --primary-text: #050505;
+      --discord-purple: #5865F2;
+      --discord-hover: #4752C4;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --neutral: #6b7280;
+      --text-main: #ffffff;
+      --text-muted: #9ca3af;
+      --input-bg: #09090c;
+      --input-border: #24242e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+      background: var(--bg-color); 
+      color: var(--text-main); 
+      padding: 16px; 
+      padding-bottom: 90px;
+    }
+
+    .container { max-width: 600px; margin: 0 auto; }
+
+    header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .header-info { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      border: 1px solid var(--primary); display: flex;
+      align-items: center; justify-content: center;
+      color: var(--primary); font-size: 18px;
+    }
+    .brand-title { font-size: 17px; font-weight: 700; color: var(--primary); }
+    .brand-email { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    
+    .connection-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.3s ease;
+    }
+    .connection-badge.connecting {
+      color: var(--warning);
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid var(--warning);
+    }
+    .connection-badge.connected {
+      color: var(--primary);
+      background: rgba(155, 240, 11, 0.12);
+      border: 1px solid var(--primary);
+    }
+
+    .btn-admin {
+      display: none; align-items: center; gap: 6px;
+      background: transparent; color: var(--primary);
+      border: 1px solid var(--primary); padding: 8px 16px;
+      border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 600;
+    }
+    .btn-admin:hover { background: var(--primary); color: var(--primary-text); }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+    .card-title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .card-subtitle { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+    .cancellation-banner {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid var(--danger);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      transition: all 0.3s ease;
+    }
+    .cancellation-banner.pinned {
+      border: 1px solid var(--primary);
+      background: rgba(155, 240, 11, 0.08);
+      box-shadow: 0 0 12px rgba(155, 240, 11, 0.15);
+    }
+
+    .pipeline-list { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .pipeline-step { display: flex; align-items: center; gap: 14px; font-size: 15px; font-weight: 600; color: var(--text-muted); }
+    .pipeline-step.active { color: var(--primary); }
+    
+    .step-circle {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid var(--text-muted); display: flex;
+      align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;
+    }
+    .pipeline-step.active .step-circle {
+      border-color: var(--primary); background: var(--primary); color: var(--primary-text);
+    }
+
+    .pipeline-ticket-box {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 20px;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .status-highlight { color: var(--primary); font-weight: 700; }
+    .status-highlight.offered { color: var(--warning); }
+
+    .discord-card {
+      background: linear-gradient(135deg, rgba(88, 101, 242, 0.15), rgba(17, 17, 21, 0.95));
+      border: 1px solid var(--discord-purple);
+      border-radius: 14px;
+      padding: 18px;
+      margin-top: 14px;
+    }
+    .discord-btn {
+      width: 100%;
+      background: var(--discord-purple);
+      color: #ffffff;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+      transition: all 0.25s ease;
+    }
+    .discord-btn:hover { background: var(--discord-hover); }
+
+    label { font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 6px; margin-top: 12px; }
+    input[type="email"], input[type="password"], input[type="text"], input[type="datetime-local"], textarea {
+      width: 100%; background: var(--input-bg); border: 1px solid var(--input-border);
+      color: var(--text-main); padding: 12px; border-radius: 10px; font-size: 14px; outline: none;
+    }
+    input:focus, textarea:focus { border-color: var(--primary); }
+
+    .btn {
+      width: 100%; padding: 12px; border: none; border-radius: 10px;
+      font-weight: 700; font-size: 14px; cursor: pointer;
+      background: var(--primary); color: var(--primary-text); margin-top: 14px;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--card-border); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-pin { background: rgba(255, 255, 255, 0.1); color: var(--text-main); border: 1px solid var(--card-border); padding: 6px 12px; font-size: 12px; border-radius: 8px; cursor: pointer; }
+    .btn-pin.pinned { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
+    .btn-sm { width: auto; padding: 6px 14px; margin-top: 0; font-size: 12px; }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+
+    .chat-box {
+      background: var(--input-bg); border: 1px solid var(--card-border);
+      border-radius: 12px; height: 320px; overflow-y: auto; padding: 16px;
+      margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height: 1.4; word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap; }
+    .chat-bubble.user { background: #1e1e26; border: 1px solid var(--card-border); align-self: flex-end; color: #ffffff; }
+    .chat-bubble.admin { background: var(--primary); align-self: flex-start; color: #050505; font-weight: 600; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: calc(65px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      background: #08080b;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; background: transparent; border: none; color: var(--text-muted);
+      font-size: 11px; font-weight: 600; cursor: pointer; flex: 1; height: 100%; position: relative;
+    }
+    .nav-item svg { width: 22px; height: 22px; fill: currentColor; }
+    .nav-item.active { color: var(--primary); }
+
+    .unread-dot {
+      position: absolute; top: 10px; right: 30%;
+      width: 9px; height: 9px; background: var(--primary);
+      border-radius: 50%; box-shadow: 0 0 8px var(--primary); display: none;
+    }
+    .unread-dot.show { display: block; }
+
+    .empty-state { text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px 0; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(8px); z-index: 2000; display: flex;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .auth-tab-row {
+      display: flex; background: var(--input-bg); border-radius: 10px;
+      padding: 4px; margin-bottom: 16px; border: 1px solid var(--card-border);
+    }
+    .auth-tab-btn {
+      flex: 1; padding: 8px; border: none; background: transparent;
+      color: var(--text-muted); font-weight: 600; font-size: 13px;
+      border-radius: 8px; cursor: pointer;
+    }
+    .auth-tab-btn.active { background: var(--primary); color: var(--primary-text); }
+
+    .warning-banner {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid var(--warning);
+      color: var(--warning);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    footer {
+      text-align: center; font-size: 12px; color: var(--text-muted);
+      margin-top: 28px; margin-bottom: 12px; padding-top: 16px;
+      border-top: 1px solid var(--card-border);
+    }
+  </style>
+</head>
+<body>
+
+<div id="negotiation-warning-modal" class="modal-overlay" style="display: none;">
+  <div class="card" style="width:100%; max-width:440px; margin-bottom:0; border: 1px solid var(--warning);">
+    <div style="text-align:center; margin-bottom:12px;">
+      <div style="font-size:36px; margin-bottom:8px;">⚠️</div>
+      <h3 style="font-size:18px; font-weight:700; color:var(--warning);">Final Schedule Change Warning</h3>
+    </div>
+    <p style="font-size:14px; color:var(--text-main); line-height:1.5; text-align:center; margin-bottom:16px;">
+      You are changing your slot for the <strong>2nd time</strong>. If you try to change the time slot a <strong>3rd time</strong>, your session will be <strong>automatically cancelled</strong>.
+    </p>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-secondary" style="margin-top:0;" onclick="closeWarningModal()">Go Back</button>
+      <button class="btn" style="margin-top:0; background:var(--warning); color:#000;" onclick="confirmWarningAndSubmit()">I Understand, Submit Slot</button>
+    </div>
+  </div>
+</div>
+
+<div id="auth-modal" class="modal-overlay">
+  <div class="card" style="width:100%; max-width:420px; margin-bottom:0;">
+    <div style="text-align:center; margin-bottom:16px;">
+      <div class="brand-icon" style="margin: 0 auto 10px auto; width:48px; height:48px; font-size:22px;">💚</div>
+      <h2 style="font-size:20px; font-weight:700; color:var(--primary);">Drozo Mind - Therapy</h2>
+      <p class="card-subtitle">Sign in or create an account to manage session bookings.</p>
+    </div>
+
+    <div class="auth-tab-row">
+      <button class="auth-tab-btn active" id="tab-login" onclick="setAuthMode('login')">Sign In</button>
+      <button class="auth-tab-btn" id="tab-signup" onclick="setAuthMode('signup')">Create Account</button>
+    </div>
+
+    <div>
+      <label>Email Address</label>
+      <input type="email" id="auth-email" placeholder="name@example.com">
+
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') handleAuthSubmit()">
+
+      <button class="btn" id="auth-submit-btn" onclick="handleAuthSubmit()">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <header>
+    <div class="header-info">
+      <div class="brand-icon">💚</div>
+      <div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="brand-title">Drozo Mind - Therapy</div>
+          <span id="connection-status" class="connection-badge connecting">🟡 Connecting...</span>
+        </div>
+        <div class="brand-email" id="header-user-email">Loading...</div>
+      </div>
+    </div>
+    <a href="admin.html" id="btn-admin-header" class="btn-admin">🛡️ Admin Panel</a>
+  </header>
+
+  <div id="cancellation-alert-container"></div>
+
+  <main id="portal-body">
+
+    <div id="view-overview" class="tab-view active">
+      <div class="card">
+        <div class="card-title"><span style="color: var(--primary);">✨</span> Welcome to Drozo Mind - Therapy</div>
+        <div class="card-subtitle">Schedule therapy sessions, coordinate with administrators, and join confirmed voice calls.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span style="color: var(--primary);">📈</span> Active Session Pipeline</div>
+
+        <div class="pipeline-list">
+          <div class="pipeline-step" id="step-1"><div class="step-circle" id="circle-1">1</div><span>1. Submitted</span></div>
+          <div class="pipeline-step" id="step-2"><div class="step-circle" id="circle-2">2</div><span>2. Slot Offered</span></div>
+          <div class="pipeline-step" id="step-3"><div class="step-circle" id="circle-3">3</div><span>3. Accepted & Scheduled</span></div>
+          <div class="pipeline-step" id="step-4"><div class="step-circle" id="circle-4">4</div><span>4. Confirmed</span></div>
+        </div>
+
+        <div id="pipeline-active-card" class="pipeline-ticket-box">
+          <div class="empty-state">No active booking found. Tap <strong>Book</strong> below to schedule a session.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-book" class="tab-view">
+      <div class="card">
+        <div class="card-title">📅 Schedule a Session</div>
+        <p class="card-subtitle">Select your preferred date and time for your therapy appointment.</p>
+
+        <div id="booking-restriction-notice"></div>
+
+        <div id="booking-form-box">
+          <label>Preferred Date & Time <span style="color:var(--danger)">*</span></label>
+          <input type="datetime-local" id="book-datetime">
+
+          <label>Discord Username <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="book-discord" placeholder="e.g. username or handle#1234">
+
+          <label>Session Notes / Focus Area (Optional)</label>
+          <textarea id="book-notes" rows="3" placeholder="Describe what you'd like to discuss..."></textarea>
+
+          <button class="btn" id="submit-booking-btn" onclick="submitBooking()">Submit Booking Request</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-support" class="tab-view">
+      <div class="card">
+        <div class="card-title">💬 Direct Support</div>
+        <p class="card-subtitle">Chat directly with your therapist or session administrator.</p>
+
+        <div class="chat-box" id="chat-messages-container">
+          <div class="empty-state">No messages exchanged yet.</div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="chat-user-input" placeholder="Type a message..." style="margin-bottom:0;" onkeydown="if(event.key==='Enter') sendChatMessage()" autocomplete="off">
+          <button id="user-send-btn" class="btn" style="width: 110px; margin-top:0;" onclick="sendChatMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-sessions" class="tab-view">
+      <div class="card">
+        <div class="card-title">🕒 Session History</div>
+        <p class="card-subtitle">View all past and present booking records.</p>
+        <div id="sessions-history-list" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+          <div class="empty-state">Loading booking history...</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-profile" class="tab-view">
+      <div class="card">
+        <div class="card-title">👤 User Profile</div>
+        <label>Registered Email</label>
+        <input type="text" id="profile-email-display" readonly style="opacity: 0.8;">
+
+        <label>User ID</label>
+        <input type="text" id="profile-id-display" readonly style="font-family: monospace; opacity: 0.6;">
+
+        <button class="btn btn-danger" style="margin-top: 20px;" onclick="logoutUser()">Log Out</button>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    © 2026 Drozo Mind - Therapy by Drozoo. All rights reserved.
+  </footer>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchNavTab('overview', this)">
+      <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zm10-10h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg>
+      Overview
+    </button>
+    <button class="nav-item" onclick="switchNavTab('book', this)">
+      <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+      Book
+    </button>
+    <button class="nav-item" id="nav-support-btn" onclick="switchNavTab('support', this)">
+      <span class="unread-dot" id="support-unread-dot"></span>
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+      Support
+    </button>
+    <button class="nav-item" onclick="switchNavTab('sessions', this)">
+      <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      Sessions
+    </button>
+    <button class="nav-item" onclick="switchNavTab('profile', this)">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      Profile
+    </button>
+  </nav>
+
+</div>
+
+<script>
+  const SUPABASE_URL = "https://qhwtjzpqolhslhancngs.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_Hm0_jgynuWcA01ckhAs1YA_jjJfNmbL";
+
+  const { createClient } = window.supabase;
+  const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUserId = null;
+  let currentUserEmail = null;
+  let authMode = 'login';
+  let myTickets = [];
+  let isSendingUserMsg = false;
+  let pendingNegotiation = null;
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+    document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+    document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Sign In' : 'Create Account';
+  }
+
+  function formatLocalDateTime(isoString) {
+    if (!isoString) return 'N/A';
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
+    return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  async function syncUserProfile(userId, userEmail) {
+    const { data: existingProfile } = await supabaseClient
+      .from('profiles')
+      .select('id, email, role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!existingProfile) {
+      const initialRole = (userEmail.toLowerCase() === 'helloprogamez@gmail.com' || userEmail.toLowerCase() === 'aviatorrudra@gmail.com') ? 'admin' : 'user';
+      
+      await supabaseClient.from('profiles').insert([{
+        id: userId,
+        email: userEmail,
+        role: initialRole
+      }]);
+    } else {
+      await supabaseClient.from('profiles').update({ email: userEmail }).eq('id', userId);
+    }
+  }
+
+  async function checkAdminRolePermission() {
+    const adminHeaderBtn = document.getElementById('btn-admin-header');
+    if (!currentUserId) {
+      adminHeaderBtn.style.display = 'none';
+      return;
+    }
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('role')
+      .eq('id', currentUserId)
+      .maybeSingle();
+
+    if (profile && profile.role === 'admin') {
+      adminHeaderBtn.style.display = 'inline-flex';
+    } else {
+      adminHeaderBtn.style.display = 'none';
+    }
+  }
+
+  async function handleAuthSubmit() {
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value.trim();
+
+    if (!email || !password) return alert("Please enter both email and password.");
+
+    if (authMode === 'signup') {
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) return alert("Sign-Up Error: " + error.message);
+      if (data.user) await syncUserProfile(data.user.id, email);
+      alert("Account created successfully!");
+    } else {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) return alert("Login Error: " + error.message);
+      if (data.user) await syncUserProfile(data.user.id, data.user.email);
+    }
+
+    init();
+  }
+
+  async function init() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+
+    if (!session) {
+      document.getElementById('auth-modal').style.display = 'flex';
+      return;
+    }
+
+    document.getElementById('auth-modal').style.display = 'none';
+    currentUserId = session.user.id;
+    currentUserEmail = session.user.email;
+
+    await syncUserProfile(currentUserId, currentUserEmail);
+    await checkAdminRolePermission();
+
+    document.getElementById('header-user-email').innerText = currentUserEmail;
+    document.getElementById('profile-email-display').value = currentUserEmail;
+    document.getElementById('profile-id-display').value = currentUserId;
+
+    await loadMyTickets();
+    await loadChatMessages();
+    checkUnreadAdminMessages();
+    subscribeRealtime();
+  }
+
+  async function logoutUser() {
+    await supabaseClient.auth.signOut();
+    location.reload();
+  }
+
+  async function switchNavTab(tabName, btnEl) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+
+    btnEl.classList.add('active');
+    document.getElementById(`view-${tabName}`).classList.add('active');
+
+    if (tabName === 'support') {
+      document.getElementById('support-unread-dot').classList.remove('show');
+      await markAdminMessagesAsRead();
+      setTimeout(() => {
+        const input = document.getElementById('chat-user-input');
+        if (input) input.focus();
+      }, 100);
+    }
+  }
+
+  async function markAdminMessagesAsRead() {
+    if (!currentUserId) return;
+    document.getElementById('support-unread-dot').classList.remove('show');
+    await supabaseClient
+      .from('chat_messages')
+      .update({ status: 'read' })
+      .eq('user_id', currentUserId)
+      .eq('sender_role', 'admin')
+      .eq('status', 'unread');
+  }
+
+  async function loadMyTickets() {
+    const { data: tickets } = await supabaseClient
+      .from('tickets')
+      .select('*')
+      .eq('user_id', currentUserId)
+      .order('created_at', { ascending: false });
+
+    myTickets = tickets || [];
+    renderCancellationAlerts();
+    renderActivePipeline();
+    renderHistorySessions();
+    checkBookingRestrictions();
+  }
+
+  function checkBookingRestrictions() {
+    const activeTicket = myTickets.find(t => t.status !== 'Cancelled' && t.status !== 'Closed');
+    const noticeContainer = document.getElementById('booking-restriction-notice');
+    const submitBtn = document.getElementById('submit-booking-btn');
+
+    if (activeTicket) {
+      noticeContainer.innerHTML = `
+        <div class="warning-banner">
+          ⚠️ <strong>Active Booking In Progress (#TCK-${activeTicket.ticket_number})</strong><br>
+          You can only have one active session booking at a time. Please complete or cancel your current request before scheduling a new slot.
+        </div>
+      `;
+      if (submitBtn) submitBtn.disabled = true;
+    } else {
+      noticeContainer.innerHTML = '';
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+
+  function renderCancellationAlerts() {
+    const container = document.getElementById('cancellation-alert-container');
+    container.innerHTML = '';
+
+    const closedTickets = myTickets.filter(t => 
+      (t.status === 'Cancelled' || t.status === 'Closed') && 
+      !localStorage.getItem(`dismissed_ticket_${t.id}`)
+    );
+
+    closedTickets.sort((a, b) => {
+      const isPinnedA = localStorage.getItem(`pinned_ticket_${a.id}`) === 'true';
+      const isPinnedB = localStorage.getItem(`pinned_ticket_${b.id}`) === 'true';
+      return isPinnedB - isPinnedA;
+    });
+
+    closedTickets.forEach(ticket => {
+      const isPinned = localStorage.getItem(`pinned_ticket_${ticket.id}`) === 'true';
+
+      const alertBox = document.createElement('div');
+      alertBox.className = `cancellation-banner ${isPinned ? 'pinned' : ''}`;
+      alertBox.innerHTML = `
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong style="color: var(--danger); font-size: 14px;">⚠️ Session Closed</strong>
+            ${isPinned ? '<span style="font-size: 10px; font-weight: 700; background: var(--primary); color: var(--primary-text); padding: 2px 6px; border-radius: 6px;">📌 PINNED</span>' : ''}
+          </div>
+          <p style="font-size: 13px; margin-top: 4px; line-height: 1.4;">
+            Your session <strong>#TCK-${ticket.ticket_number}</strong> was cancelled/closed. <br>
+            <strong>Reason:</strong> ${ticket.admin_comment || 'No specific reason provided.'}
+          </p>
+        </div>
+        <div style="display: flex; gap: 6px; flex-direction: column; align-items: flex-end;">
+          <button class="btn-pin ${isPinned ? 'pinned' : ''}" onclick="togglePinNotice('${ticket.id}')">
+            ${isPinned ? '📌 Pinned' : '📌 Pin'}
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="dismissCancellationNotice('${ticket.id}')">Dismiss</button>
+        </div>
+      `;
+      container.appendChild(alertBox);
+    });
+  }
+
+  function togglePinNotice(ticketId) {
+    const isPinned = localStorage.getItem(`pinned_ticket_${ticketId}`) === 'true';
+    if (isPinned) {
+      localStorage.removeItem(`pinned_ticket_${ticketId}`);
+    } else {
+      localStorage.setItem(`pinned_ticket_${ticketId}`, 'true');
+    }
+    renderCancellationAlerts();
+  }
+
+  function dismissCancellationNotice(ticketId) {
+    localStorage.setItem(`dismissed_ticket_${ticketId}`, 'true');
+    localStorage.removeItem(`pinned_ticket_${ticketId}`);
+    renderCancellationAlerts();
+    renderActivePipeline();
+  }
+
+  function renderActivePipeline() {
+    const pipelineContainer = document.getElementById('pipeline-active-card');
+    
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById(`step-${i}`).classList.remove('active');
+      document.getElementById(`circle-${i}`).innerText = i;
+    }
+
+    const activeTicket = myTickets.find(t => t.status !== 'Cancelled' && t.status !== 'Closed');
+
+    if (!activeTicket) {
+      pipelineContainer.innerHTML = `<div class="empty-state">No active booking found. Tap <strong>Book</strong> below to schedule a session.</div>`;
+      return;
+    }
+
+    const status = activeTicket.status || 'Submitted';
+
+    let stepNum = 1;
+    if (status === 'Slot Offered') stepNum = 2;
+    else if (status === 'Accepted' || status === 'Scheduled') stepNum = 3;
+    else if (status === 'Confirmed') stepNum = 4;
+
+    for (let i = 1; i <= stepNum; i++) {
+      const step = document.getElementById(`step-${i}`);
+      const circle = document.getElementById(`circle-${i}`);
+      step.classList.add('active');
+      if (i < stepNum || status === 'Confirmed') circle.innerText = '✓';
+    }
+
+    pipelineContainer.innerHTML = `
+      <div><strong>Ticket Ref:</strong> TCK-${activeTicket.ticket_number}</div>
+      <div><strong>Status:</strong> <span class="status-highlight ${status === 'Slot Offered' ? 'offered' : ''}">${status}</span></div>
+      <div><strong>Discord Handle:</strong> <span style="color: #5865F2; font-weight: 600;">${activeTicket.discord_username || 'Not Provided'}</span></div>
+      ${activeTicket.pref_time ? `<div><strong>Requested Slot:</strong> ${formatLocalDateTime(activeTicket.pref_time)}</div>` : ''}
+      ${activeTicket.offered_time ? `<div><strong>Offered Slot:</strong> ${formatLocalDateTime(activeTicket.offered_time)}</div>` : ''}
+      ${activeTicket.accepted_time ? `<div><strong>Confirmed Time:</strong> ${formatLocalDateTime(activeTicket.accepted_time)}</div>` : ''}
+      ${activeTicket.admin_comment ? `<div style="color:var(--text-muted); margin-top:4px;"><em>Note: ${activeTicket.admin_comment}</em></div>` : ''}
+
+      ${(status === 'Accepted' || status === 'Confirmed') ? `
+        <div class="discord-card">
+          <div style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 4px;">🎉 Session Confirmed & Ready!</div>
+          <p style="font-size: 13px; color: var(--text-muted); line-height:1.4;">
+            Your slot is locked for <strong>${formatLocalDateTime(activeTicket.accepted_time || activeTicket.offered_time)}</strong>. Click below to join via your 1-time session link.
+          </p>
+          ${activeTicket.discord_link ? `
+            <button id="discord-join-btn" class="discord-btn" onclick="connectToDiscordServer('${activeTicket.discord_link}')">
+              <span>💬 Connect to Discord Session</span>
+            </button>
+          ` : `
+            <p style="color: var(--warning); margin-top: 8px; font-weight: 600;">Waiting for administrator to send session invite link...</p>
+          `}
+        </div>
+      ` : ''}
+
+      ${status === 'Slot Offered' ? `
+        <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 12px; border-radius: 10px; margin-top: 12px;">
+          <p style="color: var(--warning); font-weight:700; margin-bottom: 8px;">Admin proposed a new time slot (${formatLocalDateTime(activeTicket.offered_time)}).</p>
+          <button class="btn" style="margin-top:0; margin-bottom:10px;" onclick="acceptOfferedSlot('${activeTicket.id}', '${activeTicket.offered_time}')">Accept Proposed Slot</button>
+          
+          <label>Or Counter-Propose Another Time:</label>
+          <input type="datetime-local" id="counter-time-input">
+          
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="btn btn-secondary" style="margin-top:0;" onclick="proposeNewTime('${activeTicket.id}',${activeTicket.negotiation_count || 0})">Submit Time</button>
+            <button class="btn btn-danger" style="margin-top:0;" onclick="cancelTicket('${activeTicket.id}')">Cancel Request</button>
+          </div>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  function connectToDiscordServer(targetUrl) {
+    if (!targetUrl) return alert("Session link is missing or invalid.");
+    window.open(targetUrl, "_blank");
+  }
+
+  function renderHistorySessions() {
+    const list = document.getElementById('sessions-history-list');
+    list.innerHTML = '';
+
+    if (myTickets.length === 0) {
+      list.innerHTML = `<div class="empty-state">No booking history recorded.</div>`;
+      return;
+    }
+
+    myTickets.forEach(t => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--input-bg); border:1px solid var(--card-border); padding:14px; border-radius:10px; font-size:13px;';
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <strong>Ticket #TCK-${t.ticket_number}</strong>
+          <span class="status-highlight">${t.status}</span>
+        </div>
+        <div>Date/Time: ${formatLocalDateTime(t.accepted_time || t.offered_time || t.pref_time)}</div>
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  async function submitBooking() {
+    const activeTicket = myTickets.find(t => t.status !== 'Cancelled' && t.status !== 'Closed');
+    if (activeTicket) {
+      return alert(`You already have an active booking (#TCK-${activeTicket.ticket_number}). Please complete or cancel your existing session before booking a new slot.`);
+    }
+
+    const rawTime = document.getElementById('book-datetime').value;
+    const discordUsername = document.getElementById('book-discord').value.trim();
+    const notes = document.getElementById('book-notes').value.trim();
+
+    if (!rawTime) return alert("Please select a date and time.");
+    if (!discordUsername) return alert("Please enter your Discord username.");
+
+    const dateObj = new Date(rawTime);
+    if (isNaN(dateObj.getTime())) return alert("Invalid date selected.");
+
+    const isoTime = dateObj.toISOString();
+    const ticketNum = Math.floor(100000 + Math.random() * 900000);
+
+    const { error } = await supabaseClient.from('tickets').insert([{
+      ticket_number: ticketNum.toString(),
+      user_id: currentUserId,
+      discord_username: discordUsername,
+      pref_time: isoTime,
+      notes: notes,
+      status: 'Submitted',
+      negotiation_count: 0
+    }]);
+
+    if (error) return alert("Booking failed: " + error.message);
+
+    // Call backend to send notification email
+    try {
+      await fetch('https://drozo-mind-backend.onrender.com/api/notify-submission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientEmail: currentUserEmail,
+          ticketNumber: ticketNum,
+          requestedTime: isoTime
+        })
+      });
+    } catch (e) {
+      console.warn("Could not dispatch confirmation email:", e);
+    }
+
+    alert("Session requested successfully!");
+    document.getElementById('book-datetime').value = '';
+    document.getElementById('book-discord').value = '';
+    document.getElementById('book-notes').value = '';
+    switchNavTab('overview', document.querySelectorAll('.nav-item')[0]);
+    loadMyTickets();
+  }
+
+  async function acceptOfferedSlot(ticketId, offeredTime) {
+    await supabaseClient.from('tickets').update({ status: 'Accepted', accepted_time: offeredTime }).eq('id', ticketId);
+    loadMyTickets();
+  }
+
+  async function proposeNewTime(ticketId, currentCount) {
+    const rawVal = document.getElementById('counter-time-input').value;
+    if (!rawVal) return alert("Select date and time first.");
+
+    const dateObj = new Date(rawVal);
+    if (isNaN(dateObj.getTime())) return alert("Invalid date selected.");
+
+    const isoTime = dateObj.toISOString();
+    const newCount = (currentCount || 0) + 1;
+
+    if (newCount >= 3) {
+      await supabaseClient.from('tickets').update({
+        status: 'Cancelled',
+        admin_comment: 'Auto-cancelled: Client reached maximum slot change limit (3 attempts).',
+        negotiation_count: newCount
+      }).eq('id', ticketId);
+      alert("Session cancelled automatically because your maximum slot change attempts (3) were reached.");
+      loadMyTickets();
+      return;
+    }
+
+    if (newCount === 2) {
+      pendingNegotiation = { ticketId, isoTime, newCount };
+      document.getElementById('negotiation-warning-modal').style.display = 'flex';
+      return;
+    }
+
+    await executeProposal(ticketId, isoTime, newCount);
+  }
+
+  async function executeProposal(ticketId, isoTime, newCount) {
+    await supabaseClient.from('tickets').update({
+      status: 'Submitted',
+      pref_time: isoTime,
+      offered_time: null,
+      negotiation_count: newCount
+    }).eq('id', ticketId);
+    loadMyTickets();
+  }
+
+  async function confirmWarningAndSubmit() {
+    if (!pendingNegotiation) return;
+    const { ticketId, isoTime, newCount } = pendingNegotiation;
+    document.getElementById('negotiation-warning-modal').style.display = 'none';
+    pendingNegotiation = null;
+    await executeProposal(ticketId, isoTime, newCount);
+  }
+
+  function closeWarningModal() {
+    document.getElementById('negotiation-warning-modal').style.display = 'none';
+    pendingNegotiation = null;
+  }
+
+  async function cancelTicket(ticketId) {
+    await supabaseClient.from('tickets').update({ status: 'Cancelled', admin_comment: 'Cancelled by client.' }).eq('id', ticketId);
+    loadMyTickets();
+  }
+
+  async function loadChatMessages() {
+    if (!currentUserId) return;
+
+    const { data: msgs } = await supabaseClient
+      .from('chat_messages')
+      .select('*')
+      .eq('user_id', currentUserId)
+      .order('created_at', { ascending: true });
+
+    const container = document.getElementById('chat-messages-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!msgs || msgs.length === 0) {
+      container.innerHTML = `<div class="empty-state">No messages exchanged yet.</div>`;
+      return;
+    }
+
+    msgs.forEach(m => {
+      const bubble = document.createElement('div');
+      const isAdmin = m.sender_role === 'admin';
+      bubble.className = `chat-bubble ${isAdmin ? 'admin' : 'user'}`;
+      bubble.innerText = m.message || '';
+      container.appendChild(bubble);
+    });
+
+    container.scrollTop = container.scrollHeight;
+
+    if (document.getElementById('view-support').classList.contains('active')) {
+      markAdminMessagesAsRead();
+    }
+  }
+
+  async function sendChatMessage() {
+    const input = document.getElementById('chat-user-input');
+    const sendBtn = document.getElementById('user-send-btn');
+    const msg = input.value.trim();
+
+    if (!msg || isSendingUserMsg || !currentUserId) return;
+
+    try {
+      isSendingUserMsg = true;
+      sendBtn.disabled = true;
+      input.value = '';
+
+      const { error } = await supabaseClient.from('chat_messages').insert([{
+        user_id: currentUserId,
+        sender_role: 'user',
+        message: msg,
+        status: 'unread'
+      }]);
+
+      if (error) {
+        alert("Failed to send message: " + error.message);
+        return;
+      }
+
+      await loadChatMessages();
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    } finally {
+      isSendingUserMsg = false;
+      sendBtn.disabled = false;
+      input.disabled = false;
+      input.focus();
+    }
+  }
+
+  async function checkUnreadAdminMessages() {
+    const isSupportTab = document.getElementById('view-support').classList.contains('active');
+    const dot = document.getElementById('support-unread-dot');
+
+    if (isSupportTab) {
+      dot.classList.remove('show');
+      await markAdminMessagesAsRead();
+      return;
+    }
+
+    if (!currentUserId) return;
+
+    const { data: unread } = await supabaseClient
+      .from('chat_messages')
+      .select('id')
+      .eq('user_id', currentUserId)
+      .eq('sender_role', 'admin')
+      .eq('status', 'unread');
+
+    if (unread && unread.length > 0) {
+      dot.classList.add('show');
+    } else {
+      dot.classList.remove('show');
+    }
+  }
+
+  function subscribeRealtime() {
+    const connBadge = document.getElementById('connection-status');
+
+    supabaseClient.channel('client-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => loadMyTickets())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, () => {
+        loadChatMessages();
+        checkUnreadAdminMessages();
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          connBadge.className = 'connection-badge connected';
+          connBadge.innerHTML = '🟢 Connected';
+        } else {
+          connBadge.className = 'connection-badge connecting';
+          connBadge.innerHTML = '🟡 Connecting...';
+        }
+      });
+  }
+
+  init();
+</script>
+</body>
+</html>

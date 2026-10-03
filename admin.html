@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drozo Mind - Admin Dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070709;
+      --card-bg: #121217;
+      --border: #1f1f28;
+      --primary: #9bf00b;
+      --danger: #ef4444;
+      --text: #ffffff;
+      --muted: #9ca3af;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
+    .btn { background: var(--primary); color: #000; font-weight: bold; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .ticket-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h2>🛡️ Admin Management Panel</h2>
+      <a href="index.html" style="color:var(--primary); text-decoration:none; font-weight:bold;">← Client Portal</a>
+    </header>
+
+    <h3>Active Booking Requests</h3>
+    <div id="tickets-list" style="margin-top: 14px;"></div>
+  </div>
+
+  <script>
+    const API_BASE = "https://drozo-mind-backend.onrender.com/api";
+    const currentUser = JSON.parse(localStorage.getItem('drozo_user') || 'null');
+
+    if (!currentUser || currentUser.role !== 'admin') {
+      alert("Access Denied: You must be logged in as an admin.");
+      window.location.href = "index.html";
+    }
+
+    async function loadTickets() {
+      const res = await fetch(`${API_BASE}/tickets?role=admin`);
+      const data = await res.json();
+      const container = document.getElementById('tickets-list');
+
+      if (!data.tickets || data.tickets.length === 0) {
+        container.innerHTML = `<p style="color:var(--muted)">No tickets found.</p>`;
+        return;
+      }
+
+      container.innerHTML = data.tickets.map(t => `
+        <div class="card">
+          <div class="ticket-header">
+            <strong>#TCK-${t.ticket_number} (${t.status})</strong>
+            <span>${new Date(t.created_at).toLocaleDateString()}</span>
+          </div>
+          <p><strong>Client Email:</strong> ${t.user_email || 'N/A'}</p>
+          <p><strong>Handle:</strong> ${t.discord_username}</p>
+          <p><strong>Requested Slot:</strong> ${new Date(t.pref_time).toLocaleString()}</p>
+          ${t.notes ? `<p><strong>Notes:</strong> ${t.notes}</p>` : ''}
+          ${t.status === 'Submitted' ? `
+            <div style="margin-top:12px;">
+              <button class="btn" onclick="confirmTicket('${t.id}', '${t.pref_time}', '${t.user_email}')">Confirm & Generate Meet</button>
+            </div>
+          ` : ''}
+          ${t.discord_link ? `<p style="margin-top:8px;"><strong>Meet Link:</strong> <a href="${t.discord_link}" target="_blank" style="color:var(--primary);">${t.discord_link}</a></p>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function confirmTicket(ticketId, chosenTime, clientEmail) {
+      if (!confirm(`Confirm session and email ${clientEmail}?`)) return;
+
+      const res = await fetch(`${API_BASE}/confirm-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId, chosenTime, clientEmail })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Session Confirmed!\nMeet Link: " + data.meetUrl);
+        loadTickets();
+      } else {
+        alert("Error: " + data.error);
+      }
+    }
+
+    loadTickets();
+  </script>
+</body>
+</html>
